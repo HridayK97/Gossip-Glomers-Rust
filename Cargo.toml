@@ -9,6 +9,8 @@ edition = "2021"
 maelstrom-node = "0.1.6"
 async-trait = "0.1.51"
 uuid = { version = "1.9.1", features = ["v4", "fast-rng", "macro-diagnostics"] }
+serde_json = "1.0.70"
+tokio = { version = "1.10.1", features = ["full"] }
 
 [[bin]]
 name = "echo"
@@ -17,3 +19,7 @@ path = "src/bin/echo.rs"
 [[bin]]
 name = "unique_id"
 path = "src/bin/unique_id.rs"
+
+[[bin]]
+name = "single_node_broadcast"
+path = "src/bin/single_node_broadcast.rs"
