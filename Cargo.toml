@@ -8,7 +8,12 @@ edition = "2021"
 [dependencies]
 maelstrom-node = "0.1.6"
 async-trait = "0.1.51"
+uuid = { version = "1.9.1", features = ["v4", "fast-rng", "macro-diagnostics"] }
 
 [[bin]]
 name = "echo"
 path = "src/bin/echo.rs"
+
+[[bin]]
+name = "unique_id"
+path = "src/bin/unique_id.rs"
