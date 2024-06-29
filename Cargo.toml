@@ -22,5 +22,5 @@ name = "unique_id"
 path = "src/bin/unique_id.rs"
 
 [[bin]]
-name = "single_node_broadcast"
-path = "src/bin/single_node_broadcast.rs"
+name = "broadcast"
+path = "src/bin/broadcast.rs"
