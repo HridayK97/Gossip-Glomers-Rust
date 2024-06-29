@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use maelstrom::protocol::Message;
 use maelstrom::{done, Node, Result, Runtime};
-use serde_json::{Number, Value};
-use std::collections::HashSet;
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -23,49 +23,45 @@ struct Handler {
 #[async_trait]
 impl Node for Handler {
     async fn process(&self, runtime: Runtime, req: Message) -> Result<()> {
-        if req.get_type() == "broadcast" {
-            let message = req
-                .body
-                .extra
-                .get("message")
-                .expect("Expected a message value from broadcast");
+        let request_body: Result<Request> = req.body.as_obj();
 
-            if let Value::Number(value) = message {
-                let value = value
-                    .as_i64()
-                    .expect("Expected a valid number in the message");
+        match request_body {
+            Ok(Request::Broadcast { message }) => {
                 let mut store = self.store.write().await;
-                if !store.contains(&value) {
-                    store.insert(value);
+                if !store.contains(&message) {
+                    store.insert(message);
                 }
+                return runtime.reply_ok(req).await;
             }
 
-            let mut response = req.body.clone().with_type("broadcast_ok");
-            response.extra.clear();
-            return runtime.reply(req, response).await;
-        } else if req.get_type() == "read" {
-            let mut response = req.body.clone().with_type("read_ok");
-            let store = self.store.read().await;
+            Ok(Request::Read {}) => {
+                let store = self.store.read().await;
+                let data: Vec<i64> = store.clone().into_iter().collect();
+                let msg = Request::ReadOk { messages: data };
+                return runtime.reply(req, msg).await;
+            }
 
-            let json_messages: Vec<Value> = store
-                .iter()
-                .map(|x| Value::Number(Number::from(*x)))
-                .collect();
+            Ok(Request::Topology { topology }) => {
+                return runtime.reply_ok(req).await;
+            }
 
-            response
-                .extra
-                .insert("messages".to_string(), Value::Array(json_messages));
-            return runtime.reply(req, response).await;
-        } else if req.get_type() == "topology" {
-            // Do not need to do anything with topology here
-
-            let mut response = req.body.clone().with_type("topology_ok");
-            // Maelstrom expects no topology key to be returned. I'm just cloning the request body and clearing the extra attributes added here.
-            // We still need the reply_to and message ID in the response. Not the most neat way to do it, but it works.
-            response.extra.clear();
-            return runtime.reply(req, response).await;
+            _ => done(runtime, req),
         }
-
-        done(runtime, req)
     }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "type")]
+enum Request {
+    Init {},
+    Read {},
+    ReadOk {
+        messages: Vec<i64>,
+    },
+    Broadcast {
+        message: i64,
+    },
+    Topology {
+        topology: HashMap<String, Vec<String>>,
+    },
 }
