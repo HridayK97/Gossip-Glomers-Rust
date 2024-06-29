@@ -30,6 +30,10 @@ impl Node for Handler {
                 let mut store = self.store.write().await;
                 if !store.contains(&message) {
                     store.insert(message);
+
+                    for neighbor in runtime.neighbours() {
+                        runtime.call_async(neighbor, Request::Broadcast { message })
+                    }
                 }
                 return runtime.reply_ok(req).await;
             }
