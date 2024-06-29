@@ -22,10 +22,9 @@ impl Node for Handler {
         if req.get_type() == "generate" {
             let mut response = req.body.clone().with_type("generate_ok");
 
-
-            response.extra.insert("id".to_string(), Uuid::new_v4().to_string().into());
-
-
+            response
+                .extra
+                .insert("id".to_string(), Uuid::new_v4().to_string().into());
 
             // let my_uuid = Uuid::new_v4();
             // println!("{}", my_uuid);
